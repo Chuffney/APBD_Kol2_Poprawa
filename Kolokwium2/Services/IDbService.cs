@@ -4,6 +4,7 @@ namespace Kolokwium2.Services;
 
 public interface IDbService
 {
-    Task<OrderDto> GetOrderById(int orderId);
-    Task FulfillOrder(int orderId, FulfillOrderDto dto);
+    Task<CharacterDto?> GetCharacterById(int id);
+    
+    Task AddItem(int characterId, AddItemDto item);
 }

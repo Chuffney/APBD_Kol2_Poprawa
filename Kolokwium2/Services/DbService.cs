@@ -1,7 +1,7 @@
 using System.Data;
 using Kolokwium2.Data;
 using Kolokwium2.DTOs;
-using Kolokwium2.Exceptions;
+using Kolokwium2.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kolokwium2.Services;
@@ -15,64 +15,68 @@ public class DbService : IDbService
         _context = context;
     }
 
-    public async Task<OrderDto> GetOrderById(int orderId)
+    public async Task<CharacterDto?> GetCharacterById(int id)
     {
-        var order = await _context.Orders
-            .Select(e => new OrderDto
-            {
-                Id = e.Id,
-                CreatedAt = e.CreatedAt,
-                FulfilledAt = e.FulfilledAt,
-                Status = e.Status.Name,
-                Client = new ClientInfoDto()
+        var character = _context.Characters.Where(e => e.CharacterId == id)
+            .Select(e => new CharacterDto()
                 {
-                    FirstName = e.Client.FirstName,
-                    LastName = e.Client.LastName,
-                },
-                Products = e.ProductOrders.Select(e => new OrderLineItemDto()
-                {
-                    Name = e.Product.Name,
-                    Price = e.Product.Price,
-                    Amount = e.Amount
-                }).ToList()
-            })
-            .FirstOrDefaultAsync(e => e.Id == orderId);
+                    FirstName = e.FirstName,
+                    LastName = e.LastName,
+                    CurrentWeight = e.CurrentWeight,
+                    MaxWeight = e.MaxWeight,
+                    BackpackItems = e.Backpacks.Select(ei => new ItemDto()
+                    {
+                        ItemName = ei.Item.Name,
+                        ItemWeight = ei.Item.Weight,
+                        Amount = ei.Amount
+                    }).ToList(),
+                    Titles = e.Titles.Select(ei => new TitleDto()
+                    {
+                        Title = ei.Title.Name,
+                        AcquiredAt = ei.AcquiredAt,
 
-        if (order is null)
-            throw new NotFoundException();
-        
-        return order;
+                    }).ToList(),
+                }
+            );
+        return await character.FirstOrDefaultAsync();
     }
+    
 
-    public async Task FulfillOrder(int orderId, FulfillOrderDto dto)
+    public async Task AddItem(int characterId, AddItemDto item)
     {
         using var transaction = await _context.Database.BeginTransactionAsync();
 
         try
         {
-            var order = await _context.Orders
-                .FirstOrDefaultAsync(o => o.Id == orderId);
+            int invalidItems = item.Items.Count(e => !_context.Items.Select(ei => ei.ItemId).Contains(e));
+            if (invalidItems > 0)
+                throw new Exception("invalid item");
 
-            if (order is null)
-                throw new NotFoundException("Order not found.");
+            int addedMass = item.Items.Select(e => _context.Items.Where(ei => ei.ItemId == e).Select(ei => ei.Weight).FirstOrDefault()).Sum();
 
-            var status = await _context.Statuses.FirstOrDefaultAsync(s => s.Name.Equals(dto.StatusName));
-            if (status is null)
-                throw new NotFoundException("Status not found.");
-
-            if (order.FulfilledAt != null)
-                throw new ConflictException("Order already fulfilled.");
+            var character = await _context.Characters.FirstOrDefaultAsync(e => e.CharacterId == characterId);
             
-            order.StatusId = status.Id;
-            order.FulfilledAt = DateTime.Now;
+            if (character.CurrentWeight + addedMass > character.MaxWeight)
+                throw new Exception("items too heavy");
             
-            var relatedProducts = _context.ProductOrders.Where(po => po.OrderId == orderId);
-            _context.ProductOrders.RemoveRange(relatedProducts);
+            character.CurrentWeight += addedMass;
+
+            foreach (var itemId in item.Items)
+            {
+                if (!character.Backpacks.Select(e => e.ItemId).Contains(itemId))
+                {
+                    _context.Backpacks.Add(new Backpack() { CharacterId = characterId, ItemId = itemId , Amount = 1});
+                }
+                else
+                {
+                    character.Backpacks.Where(e => e.ItemId == itemId).FirstOrDefault().Amount++;
+                }
+            }
 
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
             await transaction.RollbackAsync();
             throw;

@@ -5,11 +5,11 @@ namespace Kolokwium2.Data;
 
 public class DatabaseContext : DbContext
 {
-    public DbSet<Client> Clients { get; set; }
-    public DbSet<Status> Statuses { get; set; }
-    public DbSet<Product> Products { get; set; }
-    public DbSet<Order> Orders { get; set; }
-    public DbSet<ProductOrder> ProductOrders { get; set; }
+    public DbSet<Character> Characters { get; set; }
+    public DbSet<Item> Items { get; set; }
+    public DbSet<Title> Titles { get; set; }
+    public DbSet<CharacterTitle> CharacterTitles { get; set; }
+    public DbSet<Backpack> Backpacks { get; set; }
     
     protected DatabaseContext()
     {
@@ -21,44 +21,40 @@ public class DatabaseContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<Client>().HasData(new List<Client>()
+        modelBuilder.Entity<Character>().HasData(new List<Character>()
         {
-            new Client() { Id = 1, FirstName = "John", LastName = "Doe" },
-            new Client() { Id = 2, FirstName = "Jane", LastName = "Doe" },
-            new Client() { Id = 3, FirstName = "Julie", LastName = "Doe" },
+            new Character() {CharacterId = 1, FirstName = "name1", LastName = "lastname1", CurrentWeight = 100, MaxWeight = 200},
+            new Character() {CharacterId = 2, FirstName = "name2", LastName = "lastname2", CurrentWeight = 200, MaxWeight = 400},
+            new Character() {CharacterId = 3, FirstName = "name3", LastName = "lastname3", CurrentWeight = 300, MaxWeight = 600},
         });
         
-        modelBuilder.Entity<Status>().HasData(new List<Status>()
+        modelBuilder.Entity<Title>().HasData(new List<Title>()
         {
-            new Status() { Id = 1, Name = "Created" },
-            new Status() { Id = 2, Name = "Ongoing" },
-            new Status() { Id = 3, Name = "Completed" },
+            new Title() { TitleId = 1, Name = "title1"},
+            new Title() { TitleId = 2, Name = "title2"},
+            new Title() { TitleId = 3, Name = "title3"},
         });
         
-        modelBuilder.Entity<Product>().HasData(new List<Product>()
+        modelBuilder.Entity<Item>().HasData(new List<Item>()
         {
-            new Product() { Id = 1, Name = "Apple", Price = 3.45 },
-            new Product() { Id = 2, Name = "Bananas", Price = 5.55 },
-            new Product() { Id = 3, Name = "Orange", Price = 12.37 },
+            new Item() {ItemId = 1, Name = "item1", Weight = 10},
+            new Item() {ItemId = 2, Name = "item2", Weight = 20},
+            new Item() {ItemId = 3, Name = "item3", Weight = 30},
         });
         
-        modelBuilder.Entity<Order>().HasData(new List<Order>()
+        modelBuilder.Entity<Backpack>().HasData(new List<Backpack>()
         {
-            new Order() { Id = 1, CreatedAt = DateTime.Parse("2025-05-01"), FulfilledAt = DateTime.Parse("2025-05-02"), ClientId = 1, StatusId = 3},
-            new Order() { Id = 2, CreatedAt = DateTime.Parse("2025-05-02"), FulfilledAt = null, ClientId = 1, StatusId = 2},
-            new Order() { Id = 3, CreatedAt = DateTime.Parse("2025-05-03"), FulfilledAt = null, ClientId = 1, StatusId = 1},
-            new Order() { Id = 4, CreatedAt = DateTime.Parse("2025-05-04"), FulfilledAt = null, ClientId = 2, StatusId = 1},
+            new Backpack() { CharacterId = 1, ItemId = 1, Amount = 1},
+            new Backpack() { CharacterId = 2, ItemId = 2, Amount = 2},
+            new Backpack() { CharacterId = 3, ItemId = 3, Amount = 3},
         });
         
-        modelBuilder.Entity<ProductOrder>().HasData(new List<ProductOrder>()
+        modelBuilder.Entity<CharacterTitle>().HasData(new List<CharacterTitle>()
         {
-            new ProductOrder() { ProductId = 1, OrderId = 1, Amount = 3},
-            new ProductOrder() { ProductId = 2, OrderId = 1, Amount = 5},
-            new ProductOrder() { ProductId = 3, OrderId = 1, Amount = 8},
-            new ProductOrder() { ProductId = 3, OrderId = 2, Amount = 1},
-            new ProductOrder() { ProductId = 2, OrderId = 2, Amount = 2},
-            new ProductOrder() { ProductId = 3, OrderId = 3, Amount = 8},
-            new ProductOrder() { ProductId = 1, OrderId = 3, Amount = 12},
+            new CharacterTitle() {CharacterId = 1, TitleId = 1},
+            new CharacterTitle() {CharacterId = 3, TitleId = 3},
+            new CharacterTitle() {CharacterId = 3, TitleId = 2},
+            new CharacterTitle() {CharacterId = 2, TitleId = 1},
         });
     }
 }
